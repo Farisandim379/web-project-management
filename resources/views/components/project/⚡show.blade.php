@@ -1,0 +1,256 @@
+<?php
+
+use Livewire\Component;
+use App\Models\Project;
+use App\Models\Task;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+
+new class extends Component {
+    public Project $project;
+
+    // Properti Form Modal
+    public $isModalOpen = false;
+    public $taskId, $title, $description, $status = 'todo', $assignee_id, $deadline;
+
+    public function mount(Project $project)
+    {
+        // Pastikan user berhak melihat project ini [cite: 72]
+        Gate::authorize('view', $project);
+        $this->project = $project;
+    }
+
+    public function create()
+    {
+        $this->reset(['taskId', 'title', 'description', 'assignee_id', 'deadline']);
+        $this->status = 'todo';
+        $this->isModalOpen = true;
+    }
+
+    public function edit($id)
+    {
+        $task = Task::findOrFail($id);
+        Gate::authorize('update', $task); // Cek hak akses edit task
+
+        $this->taskId = $task->id;
+        $this->title = $task->title;
+        $this->description = $task->description;
+        $this->status = $task->status;
+        $this->assignee_id = $task->assignee_id;
+        $this->deadline = $task->deadline ? \Carbon\Carbon::parse($task->deadline)->format('Y-m-d') : null;
+
+        $this->isModalOpen = true;
+    }
+
+    public function save()
+    {
+        $this->validate([
+            'title' => 'required|min:3|max:255',
+            'description' => 'nullable|string',
+            'status' => 'required|in:todo,in_progress,done',
+            'assignee_id' => 'nullable|exists:users,id',
+            'deadline' => 'nullable|date',
+        ]);
+
+        if ($this->taskId) {
+            $task = Task::findOrFail($this->taskId);
+            Gate::authorize('update', $task);
+            $task->update([
+                'title' => $this->title,
+                'description' => $this->description,
+                'status' => $this->status,
+                'assignee_id' => $this->assignee_id,
+                'deadline' => $this->deadline,
+            ]);
+            session()->flash('success', 'Task berhasil diperbarui!');
+        } else {
+            // Hanya pemilik project/admin yang boleh nambah task
+            Gate::authorize('update', $this->project);
+            $this->project->tasks()->create([
+                'title' => $this->title,
+                'description' => $this->description,
+                'status' => $this->status,
+                'assignee_id' => $this->assignee_id,
+                'deadline' => $this->deadline,
+            ]);
+            session()->flash('success', 'Task baru berhasil ditambahkan!');
+        }
+
+        $this->isModalOpen = false;
+    }
+
+    public function updateStatus($id, $newStatus)
+    {
+        $task = Task::findOrFail($id);
+        Gate::authorize('update', $task);
+        $task->update(['status' => $newStatus]);
+    }
+
+    public function deleteTask($id)
+    {
+        $task = Task::findOrFail($id);
+        Gate::authorize('delete', $task);
+        $task->delete();
+        session()->flash('success', 'Task berhasil dihapus!');
+    }
+
+    public function closeModal()
+    {
+        $this->isModalOpen = false;
+    }
+
+    public function with(): array
+    {
+        return [
+            // Ambil task beserta relasi user (assignee)
+            'tasks' => $this->project->tasks()->with('assignee')->latest()->get(),
+            // Ambil semua member untuk dropdown assignee
+            'members' => User::where('role', 'member')->get(),
+        ];
+    }
+}; ?>
+
+<div class="space-y-6">
+    @if (session()->has('success'))
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-900/20">
+            <p class="text-sm font-medium text-emerald-800 dark:text-emerald-300">{{ session('success') }}</p>
+        </div>
+    @endif
+
+    <div>
+        <a wire:navigate href="{{ route('projects.index') }}" class="inline-flex items-center text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white mb-4 transition-colors">
+            <svg class="mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
+            Kembali ke Projects
+        </a>
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">{{ $project->title }}</h1>
+                <p class="text-zinc-500 dark:text-zinc-400 mt-1 max-w-2xl">{{ $project->description }}</p>
+            </div>
+            @can('update', $project)
+            <div>
+                <button wire:click="create" class="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 transition-all">
+                    + Add Task
+                </button>
+            </div>
+            @endcan
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        @foreach(['todo' => 'To Do', 'in_progress' => 'In Progress', 'done' => 'Done'] as $statusKey => $statusLabel)
+            <div class="rounded-2xl bg-zinc-50/50 border border-zinc-200 p-4 dark:bg-zinc-800/20 dark:border-zinc-800">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+                        @if($statusKey == 'todo') <span class="w-2 h-2 rounded-full bg-zinc-400"></span>
+                        @elseif($statusKey == 'in_progress') <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                        @else <span class="w-2 h-2 rounded-full bg-emerald-500"></span> @endif
+                        {{ $statusLabel }}
+                    </h3>
+                    <span class="text-xs font-medium text-zinc-500 bg-zinc-200/50 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                        {{ $tasks->where('status', $statusKey)->count() }}
+                    </span>
+                </div>
+
+                <div class="space-y-3">
+                    @forelse($tasks->where('status', $statusKey) as $task)
+                        <div class="group relative rounded-xl border border-zinc-200 bg-white p-4 shadow-sm hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600 transition-all">
+                            <h4 class="text-sm font-semibold text-zinc-900 dark:text-white mb-1">{{ $task->title }}</h4>
+                            @if($task->description)
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 mb-3">{{ $task->description }}</p>
+                            @endif
+
+                            <div class="flex items-center justify-between mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-3">
+                                <div class="flex items-center gap-2">
+                                    @if($task->assignee)
+                                        <div class="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 text-[10px] font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300" title="{{ $task->assignee->name }}">
+                                            {{ $task->assignee->initials() }}
+                                        </div>
+                                    @else
+                                        <span class="text-[10px] text-zinc-400 border border-dashed border-zinc-300 rounded-full px-2 py-0.5 dark:border-zinc-700">Unassigned</span>
+                                    @endif
+
+                                    @if($task->deadline)
+                                        <span class="text-[10px] text-zinc-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> {{ \Carbon\Carbon::parse($task->deadline)->format('M d') }}</span>
+                                    @endif
+                                </div>
+
+                                @can('update', $task)
+                                <div class="hidden group-hover:flex items-center gap-2">
+                                    <button wire:click="edit({{ $task->id }})" class="text-zinc-400 hover:text-amber-500 transition-colors"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                                    @if($statusKey !== 'in_progress') <button wire:click="updateStatus({{ $task->id }}, 'in_progress')" class="text-zinc-400 hover:text-blue-500 transition-colors" title="Move to Progress"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></button> @endif
+                                    @if($statusKey !== 'done') <button wire:click="updateStatus({{ $task->id }}, 'done')" class="text-zinc-400 hover:text-emerald-500 transition-colors" title="Mark Done"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></button> @endif
+                                </div>
+                                @endcan
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-6 border border-dashed border-zinc-300 rounded-xl dark:border-zinc-700">
+                            <p class="text-xs text-zinc-500 dark:text-zinc-400">Kosong</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    @if($isModalOpen)
+        <div class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-zinc-900/50 backdrop-blur-sm transition-opacity"></div>
+            <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+                <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                    <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md dark:bg-zinc-900 dark:border dark:border-zinc-800">
+                        <form wire:submit="save">
+                            <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                <h3 class="text-lg font-semibold leading-6 text-zinc-900 dark:text-white" id="modal-title">
+                                    {{ $taskId ? 'Edit Task' : 'Add New Task' }}
+                                </h3>
+                                <div class="mt-4 space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-zinc-900 dark:text-zinc-300">Task Title</label>
+                                        <input type="text" wire:model="title" class="mt-1 block w-full rounded-xl border-zinc-300 shadow-sm focus:ring-zinc-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white sm:text-sm">
+                                        @error('title') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-zinc-900 dark:text-zinc-300">Description</label>
+                                        <textarea wire:model="description" rows="2" class="mt-1 block w-full rounded-xl border-zinc-300 shadow-sm focus:ring-zinc-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white sm:text-sm"></textarea>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-zinc-900 dark:text-zinc-300">Status</label>
+                                            <select wire:model="status" class="mt-1 block w-full rounded-xl border-zinc-300 shadow-sm focus:ring-zinc-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white sm:text-sm">
+                                                <option value="todo">To Do</option>
+                                                <option value="in_progress">In Progress</option>
+                                                <option value="done">Done</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-zinc-900 dark:text-zinc-300">Deadline</label>
+                                            <input type="date" wire:model="deadline" class="mt-1 block w-full rounded-xl border-zinc-300 shadow-sm focus:ring-zinc-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white sm:text-sm">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-zinc-900 dark:text-zinc-300">Assign To</label>
+                                        <select wire:model="assignee_id" class="mt-1 block w-full rounded-xl border-zinc-300 shadow-sm focus:ring-zinc-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white sm:text-sm">
+                                            <option value="">-- Unassigned --</option>
+                                            @foreach($members as $member)
+                                                <option value="{{ $member->id }}">{{ $member->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-zinc-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 dark:bg-zinc-800/50">
+                                <button type="submit" class="inline-flex w-full justify-center rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-zinc-800 sm:ml-3 sm:w-auto dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100">Save Task</button>
+                                @if($taskId)
+                                    <button type="button" wire:click="deleteTask({{ $taskId }})" wire:confirm="Yakin hapus task ini?" class="mt-3 inline-flex w-full justify-center rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600 shadow-sm hover:bg-red-100 sm:mt-0 sm:ml-3 sm:w-auto dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40">Delete</button>
+                                @endif
+                                <button type="button" wire:click="closeModal" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50 sm:mt-0 sm:w-auto dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700 dark:hover:bg-zinc-700">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>
