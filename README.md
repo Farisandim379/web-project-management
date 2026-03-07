@@ -73,7 +73,8 @@ Anda dapat menggunakan akun berikut untuk menguji otorisasi aplikasi:
 | Role | Email | Password |
 |------|-------|----------|
 | **Administrator** | `admin@javas.com` | `password` |
-| **Member** | `member1@javas.com` | `password` |
+| **Member 1** | `member1@javas.com` | `password` |
+| **Member 2** | `member2@javas.com` | `password` |
 
 ---
 
