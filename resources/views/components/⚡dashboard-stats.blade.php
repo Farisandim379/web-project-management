@@ -6,7 +6,7 @@ use App\Models\Task;
 use Illuminate\Support\Facades\Auth;
 
 new class extends Component {
-    public function with(): array
+public function with(): array
     {
         $user = Auth::user();
 
@@ -16,7 +16,11 @@ new class extends Component {
                 ->groupBy('status')
                 ->pluck('count', 'status')->toArray();
         } else {
+            // Ambil project milik member / project yang task-nya di-assign ke dia
             $projects = Project::where('user_id', $user->id)
+                ->orWhereHas('tasks', function($q) use ($user) {
+                    $q->where('assignee_id', $user->id);
+                })
                 ->withCount('tasks')
                 ->latest()
                 ->take(5)
@@ -86,13 +90,15 @@ new class extends Component {
     <div class="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div class="flex items-center justify-between border-b border-zinc-100 px-6 py-5 dark:border-zinc-800">
             <h3 class="text-base font-semibold tracking-tight text-zinc-900 dark:text-white">Recent Projects</h3>
-            <a href="#" class="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">View all</a>
+            <a wire:navigate href="{{ route('projects.index') }}" class="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">View all</a>
         </div>
         <div class="divide-y divide-zinc-100 dark:divide-zinc-800">
             @forelse ($projects as $project)
                 <div class="flex items-center justify-between px-6 py-4 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
                     <div class="flex flex-col gap-1">
-                        <span class="text-sm font-medium text-zinc-900 dark:text-white">{{ $project->title }}</span>
+                        <a wire:navigate href="{{ route('projects.show', $project->id) }}" class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                            {{ $project->title }}
+                        </a>
                         <span class="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1 max-w-lg">{{ $project->description }}</span>
                     </div>
                     <div class="ml-4 shrink-0">

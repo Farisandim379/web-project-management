@@ -87,13 +87,19 @@ new class extends Component {
         session()->flash('success', 'Project berhasil dihapus!');
     }
 
-    public function with(): array
+   public function with(): array
     {
         $user = Auth::user();
         $query = Project::query()->withCount('tasks')->latest();
 
         if ($user->role !== 'admin') {
-            $query->where('user_id', $user->id);
+            // Filter project milik member ATAU yang ada tugas untuknya
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                  ->orWhereHas('tasks', function ($t) use ($user) {
+                      $t->where('assignee_id', $user->id);
+                  });
+            });
         } else {
             $query->with('user');
         }
@@ -121,18 +127,20 @@ new class extends Component {
         </div>
     @endif
 
-
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">Projects</h2>
             <p class="text-sm text-zinc-500 dark:text-zinc-400">Kelola semua project dan pantau perkembangannya.</p>
         </div>
+
+        @can('create', App\Models\Project::class)
         <div>
             <button wire:click="create" class="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 transition-all">
                 <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 Create Project
             </button>
         </div>
+        @endcan
     </div>
 
     <div class="flex items-center justify-between">
@@ -180,11 +188,12 @@ new class extends Component {
                                 <div class="flex items-center justify-end gap-3">
                                     <a wire:navigate href="{{ route('projects.show', $project->id) }}" class="text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Detail</a>
 
-                                    <button wire:click="edit({{ $project->id }})" class="text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Edit</button>
-
-                                    <button wire:click="deleteProject({{ $project->id }})" wire:confirm="Yakin ingin menghapus project ini beserta seluruh task di dalamnya?" class="text-zinc-500 hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                                        Delete
-                                    </button>
+                                    @can('update', $project)
+                                        <button wire:click="edit({{ $project->id }})" class="text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Edit</button>
+                                        <button wire:click="deleteProject({{ $project->id }})" wire:confirm="Yakin ingin menghapus project ini beserta seluruh task di dalamnya?" class="text-zinc-500 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                                            Delete
+                                        </button>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
@@ -209,7 +218,6 @@ new class extends Component {
     @if($isModalOpen)
         <div class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="fixed inset-0 bg-zinc-900/50 backdrop-blur-sm transition-opacity"></div>
-
             <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
                 <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
                     <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg dark:bg-zinc-900 dark:border dark:border-zinc-800">
@@ -221,16 +229,12 @@ new class extends Component {
                                 <div class="mt-4 space-y-4">
                                     <div>
                                         <label for="title" class="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-300">Project Title</label>
-                                        <div class="mt-2">
-                                            <input type="text" wire:model="title" id="title" class="block w-full rounded-xl border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-900 sm:text-sm sm:leading-6 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700 dark:focus:ring-white">
-                                        </div>
+                                        <input type="text" wire:model="title" id="title" class="block w-full rounded-xl border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-900 sm:text-sm sm:leading-6 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700 dark:focus:ring-white">
                                         @error('title') <span class="text-sm text-red-500 mt-1">{{ $message }}</span> @enderror
                                     </div>
                                     <div>
                                         <label for="description" class="block text-sm font-medium leading-6 text-zinc-900 dark:text-zinc-300">Description (Optional)</label>
-                                        <div class="mt-2">
-                                            <textarea wire:model="description" id="description" rows="3" class="block w-full rounded-xl border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-900 sm:text-sm sm:leading-6 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700 dark:focus:ring-white"></textarea>
-                                        </div>
+                                        <textarea wire:model="description" id="description" rows="3" class="block w-full rounded-xl border-0 py-2 text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-900 sm:text-sm sm:leading-6 dark:bg-zinc-800 dark:text-white dark:ring-zinc-700 dark:focus:ring-white"></textarea>
                                         @error('description') <span class="text-sm text-red-500 mt-1">{{ $message }}</span> @enderror
                                     </div>
                                 </div>

@@ -15,7 +15,7 @@ new class extends Component {
 
     public function mount(Project $project)
     {
-        // Pastikan user berhak melihat project ini [cite: 72]
+        // Pastikan user berhak melihat project ini
         Gate::authorize('view', $project);
         $this->project = $project;
     }
@@ -82,7 +82,7 @@ new class extends Component {
     public function updateStatus($id, $newStatus)
     {
         $task = Task::findOrFail($id);
-        Gate::authorize('update', $task);
+        Gate::authorize('changeStatus', $task);
         $task->update(['status' => $newStatus]);
     }
 
@@ -160,6 +160,13 @@ new class extends Component {
                                 <p class="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 mb-3">{{ $task->description }}</p>
                             @endif
 
+                            @if($task->deadline)
+                                <div class="mb-3 flex items-center text-xs {{ \Carbon\Carbon::parse($task->deadline)->isPast() && $statusKey !== 'done' ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-zinc-500 dark:text-zinc-400' }}">
+                                    <svg class="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <span><strong class="font-medium">Deadline:</strong> {{ \Carbon\Carbon::parse($task->deadline)->format('d M Y') }}</span>
+                                </div>
+                            @endif
+
                             <div class="flex items-center justify-between mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-3">
                                 <div class="flex items-center gap-2">
                                     @if($task->assignee)
@@ -169,19 +176,18 @@ new class extends Component {
                                     @else
                                         <span class="text-[10px] text-zinc-400 border border-dashed border-zinc-300 rounded-full px-2 py-0.5 dark:border-zinc-700">Unassigned</span>
                                     @endif
-
-                                    @if($task->deadline)
-                                        <span class="text-[10px] text-zinc-500 flex items-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> {{ \Carbon\Carbon::parse($task->deadline)->format('M d') }}</span>
-                                    @endif
                                 </div>
 
-                                @can('update', $task)
-                                <div class="hidden group-hover:flex items-center gap-2">
-                                    <button wire:click="edit({{ $task->id }})" class="text-zinc-400 hover:text-amber-500 transition-colors"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                                    @if($statusKey !== 'in_progress') <button wire:click="updateStatus({{ $task->id }}, 'in_progress')" class="text-zinc-400 hover:text-blue-500 transition-colors" title="Move to Progress"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></button> @endif
-                                    @if($statusKey !== 'done') <button wire:click="updateStatus({{ $task->id }}, 'done')" class="text-zinc-400 hover:text-emerald-500 transition-colors" title="Mark Done"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></button> @endif
+                                <div class="flex items-center gap-2">
+                                    @can('update', $task)
+                                        <button wire:click="edit({{ $task->id }})" class="text-zinc-400 hover:text-amber-500 transition-colors" title="Edit Task"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                                    @endcan
+
+                                    @can('changeStatus', $task)
+                                        @if($statusKey !== 'in_progress') <button wire:click="updateStatus({{ $task->id }}, 'in_progress')" class="text-zinc-400 hover:text-blue-500 transition-colors" title="Move to Progress"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></button> @endif
+                                        @if($statusKey !== 'done') <button wire:click="updateStatus({{ $task->id }}, 'done')" class="text-zinc-400 hover:text-emerald-500 transition-colors" title="Mark Done"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></button> @endif
+                                    @endcan
                                 </div>
-                                @endcan
                             </div>
                         </div>
                     @empty

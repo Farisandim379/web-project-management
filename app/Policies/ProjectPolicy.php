@@ -7,33 +7,16 @@ use App\Models\User;
 
 class ProjectPolicy
 {
-    // Member bisa melihat daftar project miliknya (filter ini nanti dilakukan di query database level)
-    public function viewAny(User $user): bool
-    {
-        return true;
+    public function viewAny(User $user): bool { return true; }
+
+    public function view(User $user, Project $project): bool {
+        if ($user->role === 'admin') return true;
+
+        // Member bisa melihat jika dia pembuat project ATAU dia punya task di project tersebut
+        return $user->id === $project->user_id || $project->tasks()->where('assignee_id', $user->id)->exists();
     }
 
-    // Hanya bisa melihat detail jika project tersebut miliknya
-    public function view(User $user, Project $project): bool
-    {
-        return $user->id === $project->user_id;
-    }
-
-    // Semua user yang login boleh membuat project
-    public function create(User $user): bool
-    {
-        return true;
-    }
-
-    // Hanya bisa edit jika project tersebut miliknya
-    public function update(User $user, Project $project): bool
-    {
-        return $user->id === $project->user_id;
-    }
-
-    // Hanya bisa hapus jika project tersebut miliknya
-    public function delete(User $user, Project $project): bool
-    {
-        return $user->id === $project->user_id;
-    }
+    public function create(User $user): bool { return $user->role === 'admin'; }
+    public function update(User $user, Project $project): bool { return $user->role === 'admin'; }
+    public function delete(User $user, Project $project): bool { return $user->role === 'admin'; }
 }
