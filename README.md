@@ -78,20 +78,26 @@ Anda dapat menggunakan akun berikut untuk menguji otorisasi aplikasi:
 
 ---
 
-## 🏗️ Arsitektur Aplikasi
+## 🏗️ Arsitektur & Best Practices
 
-Aplikasi ini mengadopsi pola arsitektur **MVC (Model-View-Controller)** yang dioptimalkan dengan ekosistem Laravel modern.
+Aplikasi ini mengadopsi pola arsitektur **MVC (Model-View-Controller)** yang dioptimalkan dengan ekosistem Laravel modern dan menerapkan prinsip *Clean Code*.
 
-### Model & Database Layer
-Menggunakan **Eloquent ORM** dengan relasi yang didefinisikan secara eksplisit.
+### 1. Model & Database Layer (Query Optimization)
+Menggunakan **Eloquent ORM** dengan relasi (`Project hasMany Tasks`, `Task belongsTo Assignee`). 
+Untuk menjaga performa dan menghindari *N+1 Query Problem*, aplikasi ini memanfaatkan teknik seperti:
+- `withCount()` untuk menghitung relasi secara efisien di level database.
+- `whereHas()` untuk memfilter data berdasarkan hak akses relasi secara dinamis.
+- *Eager Loading* untuk memuat data terkait dalam satu query.
 
-> Contoh: `Project hasMany Tasks`, `Task belongsTo Assignee`
+### 2. View/Controller Layer (Livewire SFC & Clean Code)
+Alih-alih menggunakan Controller konvensional, logika presentasi dan penanganan state digabungkan di dalam **Livewire Single-File Components (SFC)**. 
+- **Dynamic UI (Tanpa Page Reload):** Memanfaatkan Livewire untuk menciptakan interaksi dinamis (seperti *real-time search* dan pengiriman form modal) yang 100% murni *server-rendered* menggunakan Blade sesuai *requirement*, tanpa memerlukan framework JavaScript terpisah.
+- **Reusable Components:** Mengekstraksi elemen UI yang kompleks (seperti Modal Form) ke dalam *Blade Components* (`<x-quick-task-modal>`) agar kode HTML tidak menumpuk dan mudah dipelihara.
+- **Maintainability:** Penggunaan *Constants* pada status task untuk menghindari *magic string* dan meningkatkan keterbacaan kode.
 
-### View/Controller Layer (Livewire)
-Alih-alih menggunakan Controller konvensional, logika presentasi dan penanganan state digabungkan di dalam **Livewire Single-File Components**. Pendekatan ini menjaga UI tetap *server-rendered* sesuai requirement, namun memberikan pengalaman pengguna yang reaktif layaknya **Single Page Application (SPA)**.
-
-### Authorization Layer
-Keamanan data dijaga secara ketat di sisi backend menggunakan **Laravel Policies** (`ProjectPolicy`, `TaskPolicy`) dan **Gates**. Logika pengecekan dipusatkan di sini untuk memastikan:
-
-- ✅ **Member** tidak dapat memanipulasi data milik pengguna lain
-- ✅ **Administrator** mendapatkan akses global melalui fungsi `Gate::before`
+### 3. Security & Authorization Layer
+Keamanan aplikasi dijaga secara berlapis dengan memaksimalkan fitur keamanan bawaan Laravel:
+- **CSRF Protection:** Seluruh form submission dan interaksi komponen (Livewire actions) dilindungi secara otomatis oleh sistem verifikasi token CSRF bawaan Laravel untuk mencegah serangan *Cross-Site Request Forgery* sesuai standar requirement.
+- **RBAC (Role-Based Access Control):** Otorisasi dijaga ketat di sisi backend menggunakan **Laravel Policies** (`ProjectPolicy`, `TaskPolicy`) dan **Gates**.
+  - ✅ **Member** tidak dapat memanipulasi atau melihat data milik pengguna lain.
+  - ✅ **Administrator** mendapatkan akses global melalui fungsi `Gate::before`.
