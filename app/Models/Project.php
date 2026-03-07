@@ -15,6 +15,11 @@ class Project extends Model
         'title',
         'description',
         'user_id' ,
+        'is_archived',
+    ];
+
+    protected $casts = [
+        'is_archived' => 'boolean',
     ];
 
     /**

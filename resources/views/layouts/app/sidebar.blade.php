@@ -20,10 +20,15 @@
                     </flux:navlist.item>
 
                     @if(auth()->user()->role === 'admin')
+                        <flux:navlist.item icon="archive-box" :href="route('projects.archive')" :current="request()->routeIs('projects.archive')">
+                            Archive
+                        </flux:navlist.item>
+
                         <flux:navlist.item icon="users" :href="route('members.index')" :current="request()->routeIs('members.*')">
                             Members
                         </flux:navlist.item>
                     @endif
+
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
