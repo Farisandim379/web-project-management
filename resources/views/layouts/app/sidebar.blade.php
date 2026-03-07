@@ -18,6 +18,12 @@
                     <flux:navlist.item icon="folder" :href="route('projects.index')" :current="request()->routeIs('projects.*')">
                         Projects
                     </flux:navlist.item>
+
+                    @if(auth()->user()->role === 'admin')
+                        <flux:navlist.item icon="users" :href="route('members.index')" :current="request()->routeIs('members.*')">
+                            Members
+                        </flux:navlist.item>
+                    @endif
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
