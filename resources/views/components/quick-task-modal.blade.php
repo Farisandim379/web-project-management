@@ -10,6 +10,18 @@
                 <form wire:submit="saveTask">
                     <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                         <h3 class="text-lg font-semibold leading-6 text-zinc-900 dark:text-white" id="modal-title">Quick Add Task</h3>
+                        <!-- alert error -->
+                        @if ($errors->any())
+                            <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-900/20">
+                                <div class="flex items-start gap-3">
+                                    <svg class="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-red-800 dark:text-red-300">Gagal menyimpan task</h4>
+                                        <p class="mt-1 text-xs text-red-700 dark:text-red-400">Mohon periksa kembali kolom yang bertanda bintang merah (*).</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
 
                         <div class="mt-4 space-y-4">
                             <div>
@@ -50,7 +62,7 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-zinc-900 dark:text-zinc-300">Assign To</label>
+                                <label class="block text-sm font-medium text-zinc-900 dark:text-zinc-300">Assign To <span class="text-red-500">*</span></label>
                                 <select wire:model="assignee_id" class="mt-1 block w-full rounded-xl border-zinc-300 shadow-sm focus:ring-zinc-900 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white sm:text-sm">
                                     <option value="">-- Unassigned --</option>
                                     @foreach($members as $member)

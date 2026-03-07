@@ -45,7 +45,7 @@ new class extends Component {
             'title'       => 'required|min:3|max:255',
             'description' => 'nullable|string',
             'status'      => 'required|in:' . self::STATUS_TODO . ',' . self::STATUS_IN_PROGRESS . ',' . self::STATUS_DONE,
-            'assignee_id' => 'nullable|exists:users,id',
+            'assignee_id' => 'required|exists:users,id',
             'deadline'    => 'nullable|date',
         ]);
 
