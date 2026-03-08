@@ -112,18 +112,25 @@ new class extends Component {
 }; ?>
 
 <div class="space-y-6">
+    <!-- Notifikasi Sukses -->
     @if (session()->has('success'))
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-900/20">
             <p class="text-sm font-medium text-emerald-800 dark:text-emerald-300">{{ session('success') }}</p>
         </div>
     @endif
 
+    <!-- Notifikasi Error -->
+     @if (session()->has('error'))
+        <div class="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-900/20">
+            <p class="text-sm font-medium text-red-800 dark:text-red-300">{{ session('error') }}</p>
+        </div>
     @if (session()->has('error'))
         <div class="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-900/20">
             <p class="text-sm font-medium text-red-800 dark:text-red-300">{{ session('error') }}</p>
         </div>
     @endif
 
+    <!-- Page Header -->
     <div>
         <a wire:navigate href="{{ route('projects.index') }}" class="inline-flex items-center text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white mb-4 transition-colors">
             <svg class="mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" /></svg>
@@ -144,6 +151,7 @@ new class extends Component {
         </div>
     </div>
 
+    <!-- Task Board -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
         @foreach(['todo' => 'To Do', 'in_progress' => 'In Progress', 'done' => 'Done'] as $statusKey => $statusLabel)
             <div class="rounded-2xl bg-zinc-50/50 border border-zinc-200 p-4 dark:bg-zinc-800/20 dark:border-zinc-800">
@@ -207,6 +215,7 @@ new class extends Component {
         @endforeach
     </div>
 
+    <!-- Modal Form untuk Create/Edit Task -->
     @if($isModalOpen)
         <div class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="fixed inset-0 bg-zinc-900/50 backdrop-blur-sm transition-opacity"></div>

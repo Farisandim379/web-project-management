@@ -16,7 +16,6 @@ class Task extends Model
         'status',
         'deadline',
         'assignee_id',
-        // 'project_id' tidak perlu di-fillable
     ];
 
     /**

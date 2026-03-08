@@ -43,12 +43,14 @@ new class extends Component {
 }; ?>
 
 <div class="space-y-6">
+    <!-- Notifikasi Sukses -->
     @if (session()->has('success'))
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-900/20">
             <p class="text-sm font-medium text-emerald-800 dark:text-emerald-300">{{ session('success') }}</p>
         </div>
     @endif
 
+    <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h2 class="text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">Archived Projects</h2>
@@ -56,6 +58,7 @@ new class extends Component {
         </div>
     </div>
 
+    <!-- Daftar Project Terarsip -->
     <div class="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div class="divide-y divide-zinc-100 dark:divide-zinc-800">
             @forelse ($archivedProjects as $project)

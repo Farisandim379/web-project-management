@@ -117,24 +117,28 @@ new class extends Component {
 
 <div class="space-y-6 relative">
 
+    <!-- Notifikasi Sukses -->
     @if (session()->has('success'))
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-900/20">
             <p class="text-sm font-medium text-emerald-800 dark:text-emerald-300">{{ session('success') }}</p>
         </div>
     @endif
 
+    <!-- Notifikasi Error -->
     @if (session()->has('error'))
         <div class="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-900/20">
             <p class="text-sm font-medium text-red-800 dark:text-red-300">{{ session('error') }}</p>
         </div>
     @endif
 
+    <!-- Header & Add Button -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Projects</h1>
             <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Kelola semua project aktif dan pantau perkembangannya.</p>
         </div>
 
+        <!-- Tombol Add Project (Hanya untuk Admin) -->
         @if(auth()->user()->role === 'admin')
             <button wire:click="createProject" class="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 transition-all shrink-0">
                 + Add Project
@@ -142,6 +146,7 @@ new class extends Component {
         @endif
     </div>
 
+    <!-- Search Bar -->
     <div class="relative max-w-md">
         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <svg class="h-5 w-5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" /></svg>
@@ -149,6 +154,7 @@ new class extends Component {
         <input type="text" wire:model.live.debounce.300ms="search" class="block w-full rounded-xl border-0 py-2.5 pl-10 pr-3 text-zinc-900 ring-1 ring-inset ring-zinc-300 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-900 sm:text-sm sm:leading-6 dark:bg-zinc-900 dark:text-white dark:ring-zinc-700 dark:focus:ring-white transition-all" placeholder="Cari nama atau deskripsi project...">
     </div>
 
+    <!-- Daftar Project -->
     <div class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
 
         <div class="hidden sm:grid grid-cols-12 items-center gap-4 border-b border-zinc-200 bg-zinc-50 px-6 py-3 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:bg-zinc-800/50 dark:text-white">
@@ -204,6 +210,7 @@ new class extends Component {
         @endif
     </div>
 
+    <!-- Modal Form untuk Create/Edit Project -->
     @if($isModalOpen)
         <div class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="fixed inset-0 bg-zinc-900/50 backdrop-blur-sm transition-opacity"></div>
@@ -254,5 +261,4 @@ new class extends Component {
             </div>
         </div>
     @endif
-
 </div>

@@ -31,6 +31,7 @@ new class extends Component {
     }
 }; ?>
 
+<!-- Page Header -->
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -39,6 +40,7 @@ new class extends Component {
         </div>
     </div>
 
+    <!-- Card Statistik Total Member -->
     <div class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
