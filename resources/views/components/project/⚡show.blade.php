@@ -120,10 +120,6 @@ new class extends Component {
     @endif
 
     <!-- Notifikasi Error -->
-     @if (session()->has('error'))
-        <div class="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-900/20">
-            <p class="text-sm font-medium text-red-800 dark:text-red-300">{{ session('error') }}</p>
-        </div>
     @if (session()->has('error'))
         <div class="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-900/20">
             <p class="text-sm font-medium text-red-800 dark:text-red-300">{{ session('error') }}</p>
